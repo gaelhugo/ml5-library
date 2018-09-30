@@ -4,17 +4,18 @@
 // https://opensource.org/licenses/MIT
 
 import * as tf from '@tensorflow/tfjs';
-import pitchDetection from './PitchDetection/';
-import imageClassifier from './ImageClassifier/';
+
 import featureExtractor from './FeatureExtractor/';
+import imageClassifier from './ImageClassifier/';
+import LSTMGenerator from './LSTM/';
+import pitchDetection from './PitchDetection/';
+import pix2pix from './Pix2pix/';
+import poseNet from './PoseNet';
+import SketchRNN from './SketchRNN';
+import styleTransfer from './StyleTransfer/';
+import * as imageUtils from './utils/imageUtilities';
 import word2vec from './Word2vec/';
 import YOLO from './YOLO';
-import poseNet from './PoseNet';
-import * as imageUtils from './utils/imageUtilities';
-import styleTransfer from './StyleTransfer/';
-import LSTMGenerator from './LSTM/';
-import pix2pix from './Pix2pix/';
-import SketchRNN from './SketchRNN';
 
 module.exports = {
   imageClassifier,
@@ -30,3 +31,4 @@ module.exports = {
   ...imageUtils,
   tf,
 };
+console.log('Hello Test Development!');

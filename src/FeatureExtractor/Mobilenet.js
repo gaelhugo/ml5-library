@@ -8,10 +8,12 @@ A class that extract features from Mobilenet
 */
 
 import * as tf from '@tensorflow/tfjs';
-import Video from './../utils/Video';
-import { IMAGENET_CLASSES } from './../utils/IMAGENET_CLASSES';
-import { imgToTensor } from '../utils/imageUtilities';
+
 import callCallback from '../utils/callcallback';
+import { imgToTensor } from '../utils/imageUtilities';
+
+import { IMAGENET_CLASSES } from './../utils/IMAGENET_CLASSES';
+import Video from './../utils/Video';
 
 const IMAGESIZE = 224;
 const DEFAULTS = {
@@ -28,7 +30,8 @@ const DEFAULTS = {
 class Mobilenet {
   constructor(options, callback) {
     this.mobilenet = null;
-    this.modelPath = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json';
+    this.modelPath =
+        'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json';
     this.topKPredictions = 10;
     this.hasAnyTrainedClass = false;
     this.customModel = null;
@@ -42,6 +45,7 @@ class Mobilenet {
     this.usageType = null;
     this.ready = callCallback(this.loadModel(), callback);
     // this.then = this.ready.then;
+    this.outputIsArray = false;
   }
 
   async loadModel() {
@@ -50,7 +54,8 @@ class Mobilenet {
     if (this.video) {
       tf.tidy(() => this.mobilenet.predict(imgToTensor(this.video))); // Warm up
     }
-    this.mobilenetFeatures = await tf.model({ inputs: this.mobilenet.inputs, outputs: layer.output });
+    this.mobilenetFeatures =
+        await tf.model({ inputs: this.mobilenet.inputs, outputs: layer.output });
     return this;
   }
 
@@ -92,16 +97,20 @@ class Mobilenet {
     let label;
     let callback = cb;
 
-    if (inputOrLabel instanceof HTMLImageElement || inputOrLabel instanceof HTMLVideoElement) {
+    if (inputOrLabel instanceof HTMLImageElement ||
+        inputOrLabel instanceof HTMLVideoElement) {
       imgToAdd = inputOrLabel;
-    } else if (typeof inputOrLabel === 'object' && (inputOrLabel.elt instanceof HTMLImageElement || inputOrLabel.elt instanceof HTMLVideoElement)) {
+    } else if (typeof inputOrLabel === 'object' &&
+        (inputOrLabel.elt instanceof HTMLImageElement ||
+         inputOrLabel.elt instanceof HTMLVideoElement)) {
       imgToAdd = inputOrLabel.elt;
     } else if (typeof inputOrLabel === 'string' || typeof inputOrLabel === 'number') {
       imgToAdd = this.video;
       label = inputOrLabel;
     }
 
-    if (typeof labelOrCallback === 'string' || typeof labelOrCallback === 'number') {
+    if (typeof labelOrCallback === 'string' ||
+        typeof labelOrCallback === 'number') {
       label = labelOrCallback;
     } else if (typeof labelOrCallback === 'function') {
       callback = labelOrCallback;
@@ -121,7 +130,8 @@ class Mobilenet {
   async addImageInternal(imgToAdd, label) {
     await this.ready;
     tf.tidy(() => {
-      const imageResize = (imgToAdd === this.video) ? null : [IMAGESIZE, IMAGESIZE];
+      const imageResize =
+          (imgToAdd === this.video) ? null : [IMAGESIZE, IMAGESIZE];
       const processedImg = imgToTensor(imgToAdd, imageResize);
       const prediction = this.mobilenetFeatures.predict(processedImg);
 
@@ -221,9 +231,12 @@ class Mobilenet {
     let imgToPredict;
     let callback;
 
-    if (inputOrCallback instanceof HTMLImageElement || inputOrCallback instanceof HTMLVideoElement) {
+    if (inputOrCallback instanceof HTMLImageElement ||
+        inputOrCallback instanceof HTMLVideoElement) {
       imgToPredict = inputOrCallback;
-    } else if (typeof inputOrCallback === 'object' && (inputOrCallback.elt instanceof HTMLImageElement || inputOrCallback.elt instanceof HTMLVideoElement)) {
+    } else if (typeof inputOrCallback === 'object' &&
+        (inputOrCallback.elt instanceof HTMLImageElement ||
+         inputOrCallback.elt instanceof HTMLVideoElement)) {
       imgToPredict = inputOrCallback.elt; // p5.js image element
     } else if (typeof inputOrCallback === 'function') {
       imgToPredict = this.video;
@@ -244,26 +257,33 @@ class Mobilenet {
     await tf.nextFrame();
     this.isPredicting = true;
     const predictedClass = tf.tidy(() => {
-      const imageResize = (imgToPredict === this.video) ? null : [IMAGESIZE, IMAGESIZE];
+      const imageResize =
+          (imgToPredict === this.video) ? null : [IMAGESIZE, IMAGESIZE];
       const processedImg = imgToTensor(imgToPredict, imageResize);
       const activation = this.mobilenetFeatures.predict(processedImg);
       const predictions = this.customModel.predict(activation);
-      return predictions.as1D().argMax();
+      return (this.outputIsArray) ? predictions.as1D() : predictions.as1D().argMax(); // .argMax();
     });
     let classId = (await predictedClass.data())[0];
+    const percentage = (await predictedClass.data());
     if (this.mapStringToIndex.length > 0) {
       classId = this.mapStringToIndex[classId];
     }
-    return classId;
+    const allScores = Array.from(percentage).splice(0, this.mapStringToIndex.length);
+    const allIndexes = Array.from(Array(allScores.length).keys()).sort((a, b) => (allScores[a] > allScores[b] ? -1 : (allScores[b] > allScores[a]) || 0));
+    return (this.outputIsArray) ? { labels: this.mapStringToIndex, scores: allScores, indexes: allIndexes } : classId;
   }
 
   /* eslint max-len: ["error", { "code": 180 }] */
   async predict(inputOrCallback, cb) {
     let imgToPredict;
     let callback;
-    if (inputOrCallback instanceof HTMLImageElement || inputOrCallback instanceof HTMLVideoElement) {
+    if (inputOrCallback instanceof HTMLImageElement ||
+        inputOrCallback instanceof HTMLVideoElement) {
       imgToPredict = inputOrCallback;
-    } else if (typeof inputOrCallback === 'object' && (inputOrCallback.elt instanceof HTMLImageElement || inputOrCallback.elt instanceof HTMLVideoElement)) {
+    } else if (typeof inputOrCallback === 'object' &&
+        (inputOrCallback.elt instanceof HTMLImageElement ||
+         inputOrCallback.elt instanceof HTMLVideoElement)) {
       imgToPredict = inputOrCallback.elt; // p5.js image element
     } else if (typeof inputOrCallback === 'function') {
       imgToPredict = this.video;
@@ -283,7 +303,8 @@ class Mobilenet {
     await tf.nextFrame();
     this.isPredicting = true;
     const predictedClass = tf.tidy(() => {
-      const imageResize = (imgToPredict === this.video) ? null : [IMAGESIZE, IMAGESIZE];
+      const imageResize =
+          (imgToPredict === this.video) ? null : [IMAGESIZE, IMAGESIZE];
       const processedImg = imgToTensor(imgToPredict, imageResize);
       const activation = this.mobilenetFeatures.predict(processedImg);
       const predictions = this.customModel.predict(activation);
